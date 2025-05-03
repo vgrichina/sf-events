@@ -104,14 +104,8 @@ function processHtmlFiles(fetches, sources) {
     }
   });
   
-  // For now, let's just include all events without filtering
-  // We're focusing on successfully extracting data from multiple sources first
-  const todaysEvents = allEvents;
-  
-  // This will be the filter for actual today's events
-  // Keeping for future reference
-  /*
-  const todaysEventsFiltered = allEvents.filter(event => {
+  // Filter for today's events
+  const todaysEvents = allEvents.filter(event => {
     if (event.is_today) {
       return true;
     }
@@ -120,27 +114,92 @@ function processHtmlFiles(fetches, sources) {
       const lowerDate = event.date.toLowerCase();
       
       // Check for today's date patterns
-      if (lowerDate.includes(todayDate.toString()) || 
-          lowerDate.includes('today') || 
-          lowerDate.includes('tonight')) {
+      if (lowerDate.includes('today') || lowerDate.includes('tonight')) {
         return true;
       }
       
-      // Try to match month names
+      // Format the current date in different formats to check against
+      const dayOfWeek = today.getDay();
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const shortDayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+      
       const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
                           'july', 'august', 'september', 'october', 'november', 'december'];
       const shortMonthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
       
-      // Check for today's month and date
-      if ((lowerDate.includes(monthNames[todayMonth - 1]) || lowerDate.includes(shortMonthNames[todayMonth - 1])) &&
+      // Very strict pattern matching for today's date
+      
+      // Check for full format like "Friday, May 2" or "Fri May 2"
+      if ((lowerDate.includes(dayNames[dayOfWeek]) || lowerDate.includes(shortDayNames[dayOfWeek])) && 
+          (lowerDate.includes(monthNames[todayMonth - 1]) || lowerDate.includes(shortMonthNames[todayMonth - 1])) &&
           lowerDate.includes(todayDate.toString())) {
         return true;
+      }
+      
+      // Check for format like "May 2" - month name + date
+      if ((lowerDate.includes(monthNames[todayMonth - 1]) || lowerDate.includes(shortMonthNames[todayMonth - 1])) &&
+          (lowerDate.includes(` ${todayDate}`) || 
+           lowerDate.includes(`${todayDate},`) || 
+           lowerDate.includes(`${todayDate} `) || 
+           lowerDate.endsWith(`${todayDate}`))) {
+        // Only match if it doesn't have a different month or date
+        const otherMonths = [...monthNames, ...shortMonthNames].filter(m => 
+          m !== monthNames[todayMonth - 1] && m !== shortMonthNames[todayMonth - 1]);
+        
+        const hasOtherMonth = otherMonths.some(month => lowerDate.includes(month));
+        if (!hasOtherMonth) {
+          return true;
+        }
+      }
+      
+      // Check for date format like "5.2" (M.D)
+      const dateFormatRegex = new RegExp(`\\b${todayMonth}\\.${todayDate}\\b`);
+      if (dateFormatRegex.test(lowerDate)) {
+        return true;
+      }
+      
+      // Check for numeric format like "5/2"
+      const slashDateRegex = new RegExp(`\\b${todayMonth}\\/${todayDate}\\b`);
+      if (slashDateRegex.test(lowerDate)) {
+        return true;
+      }
+      
+      // Try to parse the date string to see if it matches today
+      try {
+        // For strings like "5.2", "5/2", etc.
+        const dateString = lowerDate.trim();
+        let dateObj;
+        
+        // Try different parsing approaches
+        if (/^\d+\.\d+$/.test(dateString)) {
+          // Format like "5.2"
+          const [month, day] = dateString.split('.').map(Number);
+          dateObj = new Date(todayYear, month - 1, day);
+        } else if (/^\d+\/\d+$/.test(dateString)) {
+          // Format like "5/2"
+          const [month, day] = dateString.split('/').map(Number);
+          dateObj = new Date(todayYear, month - 1, day);
+        } else {
+          // Try standard parsing
+          dateObj = new Date(dateString);
+        }
+        
+        // Check if parsed date is today
+        if (!isNaN(dateObj.getTime())) {
+          const isMatchingDate = dateObj.getDate() === todayDate && 
+                              dateObj.getMonth() === todayMonth - 1 && 
+                              (dateObj.getFullYear() === todayYear || dateObj.getFullYear() === 0);
+          if (isMatchingDate) {
+            return true;
+          }
+        }
+      } catch (e) {
+        // Parsing failed, continue with other checks
       }
     }
     
     return false;
   });
-  */
   
   // Save all events to JSON
   fs.writeFileSync(
@@ -155,29 +214,79 @@ function processHtmlFiles(fetches, sources) {
   );
   
   // Generate markdown report for events
-  let markdown = `# Live Music Events in SF Bay Area\n\n`;
+  const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  let markdown = `# Live Music Events in SF Bay Area for ${currentDate}\n\n`;
   
-  // Group events by venue
-  const eventsByVenue = {};
-  todaysEvents.forEach(event => {
-    const venue = event.venue || 'Unknown Venue';
-    if (!eventsByVenue[venue]) {
-      eventsByVenue[venue] = [];
+  // One more pass to strictly filter events based on date patterns
+  const strictlyFilteredEvents = todaysEvents.filter(event => {
+    // Skip events that explicitly mention a date that's not today
+    if (event.date) {
+      const lowerDate = event.date.toLowerCase();
+      
+      // Check for day names that don't match today's day
+      const dayOfWeek = today.getDay();
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const shortDayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+      
+      // If the date contains a day name that doesn't match today, filter it out
+      for (let i = 0; i < dayNames.length; i++) {
+        if (i !== dayOfWeek && 
+            (lowerDate.includes(dayNames[i]) || lowerDate.includes(shortDayNames[i]))) {
+          return false;
+        }
+      }
+      
+      // Filter out dates that explicitly mention a different day
+      const otherDates = Array.from({length: 31}, (_, i) => i + 1)
+                             .filter(d => d !== todayDate);
+      
+      for (const otherDate of otherDates) {
+        // Look for patterns like "May 12" or "5/12" or "5.12"
+        if (lowerDate.includes(` ${otherDate}`) || 
+            lowerDate.includes(`${otherDate},`) ||
+            lowerDate.match(new RegExp(`\\b${todayMonth}\\/${otherDate}\\b`)) ||
+            lowerDate.match(new RegExp(`\\b${todayMonth}\\.${otherDate}\\b`))) {
+          return false;
+        }
+      }
     }
-    eventsByVenue[venue].push(event);
+    
+    return true;
   });
   
-  // Add events by venue
-  for (const venue in eventsByVenue) {
-    markdown += `## ${venue}\n\n`;
+  // Group events by region first, then by venue
+  const eventsByRegion = {};
+  
+  strictlyFilteredEvents.forEach(event => {
+    const region = event.region || 'Other Areas';
+    const venue = event.venue || 'Unknown Venue';
     
-    eventsByVenue[venue].forEach(event => {
-      markdown += `### ${event.title}\n`;
-      if (event.date) markdown += `- **Date:** ${event.date}\n`;
-      if (event.time) markdown += `- **Time:** ${event.time}\n`;
-      if (event.url) markdown += `- **Event Link:** [Get Tickets](${event.url})\n`;
-      markdown += '\n';
-    });
+    if (!eventsByRegion[region]) {
+      eventsByRegion[region] = {};
+    }
+    
+    if (!eventsByRegion[region][venue]) {
+      eventsByRegion[region][venue] = [];
+    }
+    
+    eventsByRegion[region][venue].push(event);
+  });
+  
+  // Add events by region and venue
+  for (const region in eventsByRegion) {
+    markdown += `## ${region}\n\n`;
+    
+    for (const venue in eventsByRegion[region]) {
+      markdown += `### ${venue}\n\n`;
+      
+      eventsByRegion[region][venue].forEach(event => {
+        markdown += `#### ${event.title}\n`;
+        if (event.date) markdown += `- **Date:** ${event.date}\n`;
+        if (event.time) markdown += `- **Time:** ${event.time}\n`;
+        if (event.url) markdown += `- **Event Link:** [Get Tickets](${event.url})\n`;
+        markdown += '\n';
+      });
+    }
   }
   
   // Save markdown report
@@ -564,6 +673,87 @@ function extractEvents(html, source, sourceUrl) {
         }
       } catch (error) {
         console.error(`  Error extracting JSON events from Bandsintown: ${error.message}`);
+      }
+    }
+    
+    // Try generic JSON extraction for all sources with JSON extraction type
+    if (source.extraction_type === 'json') {
+      try {
+        console.log(`  Attempting generic JSON extraction for ${source.source}`);
+        
+        // Look for JSON-LD data (schema.org standard)
+        const jsonLdTags = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g);
+        if (jsonLdTags && jsonLdTags.length > 0) {
+          console.log(`  Found ${jsonLdTags.length} JSON-LD tags to try`);
+          
+          for (const tag of jsonLdTags) {
+            try {
+              const content = tag.replace(/<script type="application\/ld\+json">/, '')
+                                .replace(/<\/script>/, '').trim();
+              const data = JSON.parse(content);
+              
+              // Handle single event or array of events
+              const eventData = data['@type'] === 'Event' ? [data] : 
+                              (Array.isArray(data) && data[0] && data[0]['@type'] === 'Event') ? data : 
+                              (data['@graph'] && Array.isArray(data['@graph'])) ? data['@graph'].filter(item => item['@type'] === 'Event') : null;
+              
+              if (eventData && eventData.length > 0) {
+                console.log(`  Found ${eventData.length} events in JSON-LD data`);
+                
+                eventData.forEach(event => {
+                  if (!event.name) return;
+                  
+                  const title = event.name;
+                  const dateObj = event.startDate ? new Date(event.startDate) : null;
+                  
+                  const date = dateObj ? dateObj.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  }) : '';
+                  
+                  const time = dateObj ? dateObj.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  }) : '';
+                  
+                  const venue = event.location?.name || '';
+                  const url = event.url || (event.offers && (Array.isArray(event.offers) ? event.offers[0]?.url : event.offers.url)) || '';
+                  
+                  // Check if event is today
+                  let isToday = false;
+                  if (dateObj) {
+                    isToday = dateObj.getDate() === todayDate && 
+                              dateObj.getMonth() === todayMonth - 1 && 
+                              dateObj.getFullYear() === todayYear;
+                  }
+                  
+                  events.push({
+                    title,
+                    date,
+                    time,
+                    url,
+                    venue: venue || source.source,
+                    region: source.region,
+                    source_url: sourceUrl,
+                    is_today: isToday
+                  });
+                });
+                
+                if (events.length > 0) {
+                  console.log(`  Successfully extracted ${events.length} events from JSON-LD data`);
+                  return events;
+                }
+              }
+            } catch (e) {
+              console.log(`  Error processing JSON-LD tag: ${e.message}`);
+              // Continue to next tag
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`  Error in generic JSON extraction: ${error.message}`);
       }
     }
     

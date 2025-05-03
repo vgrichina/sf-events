@@ -54,7 +54,21 @@ To add a new venue, add a row to `sources.csv` with the following columns:
 - `html_dumps/`: Contains the raw HTML and screenshots from each venue
 - `processed_data/`: Contains the extracted event data
   - `all_events.json`: All events from all venues
+  - `events_YYYY-MM-DD.json`: JSON file with events specifically for today's date
   - `events_YYYY-MM-DD.md`: Markdown report of events for the current date
+
+### Markdown Output Format
+
+The generated markdown file (`tonights_events.md`) organizes events by:
+1. Region (SF, Berkeley, Oakland, etc.)
+2. Venue within each region
+3. Individual events at each venue
+
+For each event, it displays:
+- Event title
+- Date (when available)
+- Time (when available)
+- "Get Tickets" link to the event page
 
 ## Advanced Features
 
@@ -68,10 +82,17 @@ For sites that load event data dynamically (like Eventbrite and Bandsintown), we
 
 ### Date Filtering
 
-The script supports various date formats for determining if an event is happening today:
+The script now actively filters for today's events with support for various date formats:
 - Direct matches like "today" or "tonight"
 - Month/day formats like "May 2" or "5/2"
 - Day abbreviations like "Fri" combined with the date
+- Numeric formats like "5.2" (M.D)
+- Full ISO dates
+
+For each event, the script checks:
+1. If the event has been marked as today's event by the extraction logic
+2. If the date text contains today's date in various formats
+3. If the date can be parsed to match today's date
 
 ## Notes
 
