@@ -1,0 +1,379 @@
+[
+  {
+    "source": "Eventbrite",
+    "url": "https://www.eventbrite.com/d/ca--san-francisco/music--events--today/",
+    "success": true,
+    "file": "Eventbrite_https___www_eventbrite_com_d_ca__san_francisco_music__events__today_.html",
+    "selectors": {
+      "container": ".search-event-card-wrapper",
+      "title": ".event-card__title",
+      "date": ".event-date-time__content",
+      "time": ".event-date-time__content",
+      "url": ".event-card--clickable"
+    }
+  },
+  {
+    "source": "Songkick",
+    "url": "https://www.songkick.com/metro-areas/26330-us-san-francisco-bay-area",
+    "success": true,
+    "file": "Songkick_https___www_songkick_com_metro_areas_26330_us_san_francisco_bay_area.html",
+    "selectors": {
+      "container": ".event-listings-element",
+      "title": ".artists-summary",
+      "date": ".date-venue",
+      "time": ".date-venue",
+      "url": "a.event-link"
+    }
+  },
+  {
+    "source": "APE Concerts",
+    "url": "https://apeconcerts.com/",
+    "success": true,
+    "file": "APE_Concerts_https___apeconcerts_com_.html",
+    "selectors": {
+      "container": ".show",
+      "title": ".custom-name",
+      "date": ".show-date",
+      "time": ".show-doors-time a",
+      "url": ".show-link"
+    }
+  },
+  {
+    "source": "The Independent",
+    "url": "https://www.theindependentsf.com/",
+    "success": true,
+    "file": "The_Independent_https___www_theindependentsf_com_.html",
+    "selectors": {
+      "container": ".tw-inline-flex",
+      "title": ".tw-font-semibold",
+      "date": ".tw-block.tw-text-sm",
+      "time": ".tw-block.tw-text-xs",
+      "url": "a.tw-group"
+    }
+  },
+  {
+    "source": "Great American Music Hall",
+    "url": "https://www.gamh.com/",
+    "success": true,
+    "file": "Great_American_Music_Hall_https___www_gamh_com_.html",
+    "selectors": {
+      "container": ".list-view-item",
+      "title": ".event-name",
+      "date": ".date",
+      "time": ".doors",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "The Fillmore",
+    "url": "https://www.livenation.com/venue/KovZpZAE6eeA/the-fillmore-events",
+    "success": true,
+    "file": "The_Fillmore_https___www_livenation_com_venue_kovzpzae6eea_the_fillmore_events.html",
+    "selectors": {
+      "container": ".event-tile",
+      "title": ".event-name",
+      "date": ".dates .day-date",
+      "time": ".event-time span",
+      "url": "a.event-link"
+    }
+  },
+  {
+    "source": "The Regency Ballroom",
+    "url": "https://www.theregencyballroom.com/",
+    "success": true,
+    "file": "The_Regency_Ballroom_https___www_theregencyballroom_com_.html",
+    "selectors": {
+      "container": "li.show-item",
+      "title": ".title",
+      "date": "time",
+      "time": ".doors span",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "The Warfield",
+    "url": "https://www.thewarfieldtheatre.com/events/",
+    "success": true,
+    "file": "The_Warfield_https___www_thewarfieldtheatre_com_events_.html",
+    "selectors": {
+      "container": ".event-item",
+      "title": ".event-name",
+      "date": ".month-day",
+      "time": ".time span",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "Bottom of the Hill",
+    "url": "https://www.bottomofthehill.com/",
+    "success": true,
+    "file": "Bottom_of_the_Hill_https___www_bottomofthehill_com_.html",
+    "selectors": {
+      "container": "td.calendar-day-event",
+      "title": "a",
+      "date": ".date-display",
+      "time": "time",
+      "url": "a"
+    }
+  },
+  {
+    "source": "Rickshaw Stop",
+    "url": "https://www.rickshawstop.com/",
+    "success": true,
+    "file": "Rickshaw_Stop_https___www_rickshawstop_com_.html",
+    "selectors": {
+      "container": "article.list-view-item",
+      "title": ".event-name",
+      "date": ".date",
+      "time": ".time span",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "DNA Lounge",
+    "url": "https://www.dnalounge.com/calendar/",
+    "success": true,
+    "file": "DNA_Lounge_https___www_dnalounge_com_calendar_.html",
+    "selectors": {
+      "container": "tr.calendar-event",
+      "title": "td.headliners",
+      "date": "td.date",
+      "time": "td.time",
+      "url": "a"
+    }
+  },
+  {
+    "source": "The New Parish",
+    "url": "https://www.thenewparish.com/",
+    "success": true,
+    "file": "The_New_Parish_https___www_thenewparish_com_.html",
+    "selectors": {
+      "container": "article.list-view-item",
+      "title": "h3.event-name",
+      "date": ".date",
+      "time": ".time span",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "Fox Theater",
+    "url": "https://thefoxoakland.com/",
+    "success": true,
+    "file": "Fox_Theater_https___thefoxoakland_com_.html",
+    "selectors": {
+      "container": "article.tw-flex",
+      "title": ".tw-text-lg",
+      "date": ".tw-text-gray-500",
+      "time": "time",
+      "url": "a.tw-group"
+    }
+  },
+  {
+    "source": "The UC Theatre",
+    "url": "https://www.theuctheatre.org/events",
+    "success": true,
+    "file": "The_UC_Theatre_https___www_theuctheatre_org_events.html",
+    "selectors": {
+      "container": ".event-item",
+      "title": "h3.title",
+      "date": ".date",
+      "time": ".time span",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "Cornerstone Berkeley",
+    "url": "https://www.cornerstoneberkeley.com/",
+    "success": true,
+    "file": "Cornerstone_Berkeley_https___www_cornerstoneberkeley_com_.html",
+    "selectors": {
+      "container": ".event-list-item",
+      "title": "h2.title",
+      "date": "time.date",
+      "time": "time.time",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "Greek Theatre",
+    "url": "https://thegreekberkeley.com/",
+    "success": true,
+    "file": "Greek_Theatre_https___thegreekberkeley_com_.html",
+    "selectors": {
+      "container": ".event-list-item",
+      "title": ".event-title",
+      "date": ".event-date",
+      "time": ".event-time",
+      "url": "a.event-link"
+    }
+  },
+  {
+    "source": "Zellerbach Hall",
+    "url": "https://secure.calperformances.org/events",
+    "success": true,
+    "file": "Zellerbach_Hall_https___secure_calperformances_org_events.html",
+    "selectors": {
+      "container": ".event-item",
+      "title": "h3.title",
+      "date": ".date span",
+      "time": ".time span",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "The Chapel",
+    "url": "https://thechapelsf.com/",
+    "success": true,
+    "file": "The_Chapel_https___thechapelsf_com_.html",
+    "selectors": {
+      "container": ".event-list-view-item",
+      "title": ".event-name",
+      "date": ".date",
+      "time": ".doors",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "Public Works",
+    "url": "https://www.publicsf.com/calendar",
+    "success": true,
+    "file": "Public_Works_https___www_publicsf_com_calendar.html",
+    "selectors": {
+      "container": ".event-item",
+      "title": ".title",
+      "date": ".date-display",
+      "time": ".time-display",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "1015 Folsom",
+    "url": "https://1015.com/",
+    "success": true,
+    "file": "1015_Folsom_https___1015_com_.html",
+    "selectors": {
+      "container": ".upcoming-event",
+      "title": ".event-title",
+      "date": ".event-date",
+      "time": ".event-time",
+      "url": "a.event-link"
+    }
+  },
+  {
+    "source": "Thee Parkside",
+    "url": "https://www.theeparkside.com/live-music-2",
+    "success": true,
+    "file": "Thee_Parkside_https___www_theeparkside_com_live_music_2.html",
+    "selectors": {
+      "container": ".event-item",
+      "title": "h3.title",
+      "date": ".date",
+      "time": ".time",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "Brick & Mortar Music Hall",
+    "url": "https://www.brickandmortarmusic.com/",
+    "success": true,
+    "file": "Brick_&_Mortar_Music_Hall_https___www_brickandmortarmusic_com_.html",
+    "selectors": {
+      "container": ".event-item",
+      "title": ".event-title",
+      "date": ".event-date",
+      "time": ".event-time",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "Sweetwater Music Hall",
+    "url": "https://sweetwatermusichall.org/events/?view=list",
+    "success": true,
+    "file": "Sweetwater_Music_Hall_https___sweetwatermusichall_org_events__view_list.html",
+    "selectors": {
+      "container": ".event-list-item",
+      "title": ".event-title",
+      "date": ".date-info",
+      "time": ".time-info",
+      "url": "a.more-info"
+    }
+  },
+  {
+    "source": "SF Jazz",
+    "url": "https://www.sfjazz.org/calendar/",
+    "success": true,
+    "file": "SF_Jazz_https___www_sfjazz_org_calendar_.html",
+    "selectors": {
+      "container": ".event-card",
+      "title": ".event-title",
+      "date": ".event-date",
+      "time": ".event-time",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "Yerba Buena Center",
+    "url": "https://ybca.org/",
+    "success": true,
+    "file": "Yerba_Buena_Center_https___ybca_org_.html",
+    "selectors": {
+      "container": ".event-item",
+      "title": ".event-title",
+      "date": ".event-date",
+      "time": "time",
+      "url": "a.event-link"
+    }
+  },
+  {
+    "source": "Do The Bay",
+    "url": "https://dothebay.com/events/today",
+    "success": true,
+    "file": "Do_The_Bay_https___dothebay_com_events_today.html",
+    "selectors": {
+      "container": ".ds-card",
+      "title": ".ds-listing-event-title",
+      "date": ".ds-listing-details-item",
+      "time": ".ds-listing-details-item",
+      "url": "a.ds-listing-link"
+    }
+  },
+  {
+    "source": "Bandsintown",
+    "url": "https://www.bandsintown.com/c/san-francisco-ca",
+    "success": true,
+    "file": "Bandsintown_https___www_bandsintown_com_c_san_francisco_ca.html",
+    "selectors": {
+      "container": ".event-card",
+      "title": ".event-title",
+      "date": ".event-date",
+      "time": ".event-time",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "Noise Pop",
+    "url": "https://noisepop.com/",
+    "success": true,
+    "file": "Noise_Pop_https___noisepop_com_.html",
+    "selectors": {
+      "container": ".event-item",
+      "title": "h3.title",
+      "date": ".date-venue",
+      "time": ".date-venue",
+      "url": "a.url"
+    }
+  },
+  {
+    "source": "Another Planet Entertainment",
+    "url": "https://www.apeconcerts.com/",
+    "success": true,
+    "file": "Another_Planet_Entertainment_https___www_apeconcerts_com_.html",
+    "selectors": {
+      "container": ".show-listing",
+      "title": ".event-title",
+      "date": ".event-date",
+      "time": ".event-time",
+      "url": "a.url"
+    }
+  }
+]

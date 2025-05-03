@@ -1,0 +1,20 @@
+{
+  "name": "sf-events",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "fetch": "node fetch-html.js",
+    "process": "node process-html.js",
+    "events": "npm run fetch && npm run process",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Fetch and process live music events in San Francisco, Berkeley, and Oakland",
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "csv-parser": "^3.2.0",
+    "puppeteer": "^24.8.0"
+  }
+}
