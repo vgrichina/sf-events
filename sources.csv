@@ -1,6 +1,6 @@
 source,type,region,url,container_selector,title_selector,date_selector,time_selector,url_selector,extraction_type
 Eventbrite,aggregator,"SF, Berkeley, Oakland",https://www.eventbrite.com/d/ca--san-francisco/music--events--today/,article[data-spec="discover-search-desktop-card"],h2[data-spec="event-card__title"],time[data-spec="date-display"],time[data-spec="date-display"],a[data-spec="event-card__action"],json
-Songkick,aggregator,"SF Bay Area",https://www.songkick.com/metro-areas/26330-us-san-francisco-bay-area,li.event,span.name,span.venue,"",a,standard
+Songkick,aggregator,"SF Bay Area",https://www.songkick.com/metro-areas/26330-us-san-francisco-bay-area,li.event,span.name,time.date,span.venue,a,standard
 APE Concerts,promoter,"SF Bay Area",https://apeconcerts.com/,.show-item,h2.title,.show-date,.show-doors-time,a.url,standard
 The Independent,venue,"SF",https://www.theindependentsf.com/,.row.tw-event-item,.tw-name a,.tw-event-date-complete,.tw-event-time-complete,a.tw-buy-tix-btn,standard
 Great American Music Hall,venue,"SF",https://www.gamh.com/,.seetickets-list-event-container,.event-title,.event-date,.doortime-showtime,a,standard
@@ -14,12 +14,12 @@ The New Parish,venue,"Oakland",https://www.thenewparish.com/,.rhino-event-list-w
 Fox Theater,venue,"Oakland",https://thefoxoakland.com/,.view-events-tile,.view-content div h2,time,div.field-content,a,standard
 The UC Theatre,venue,"Berkeley",https://www.theuctheatre.org/events,.rhino-event-list-widget li,.rhino-event-name,.rhino-event-date,.rhino-event-time,a,standard
 Cornerstone Berkeley,venue,"Berkeley",https://www.cornerstoneberkeley.com/,.rhino-event-list-widget li,.rhino-event-name,.rhino-event-date,.rhino-event-time,a,standard
-Greek Theatre,venue,"Berkeley",https://thegreekberkeley.com/,.view-events-tile,.view-content div h2,time,div.field-content,a,standard
-Zellerbach Hall,venue,"Berkeley",https://secure.calperformances.org/events,tr.vevent,h3.summary,.dtstart,.dtstart,a,standard
-The Chapel,venue,"SF",https://thechapelsf.com/,.rhino-event-list-widget li,.rhino-event-name,.rhino-event-date,.rhino-event-time,a,standard
-Public Works,venue,"SF",https://www.publicsf.com/calendar,.event-row,.event-title,.display-date,.display-time,a,standard
-1015 Folsom,venue,"SF",https://1015.com/,.upcoming-events article,.event-title,.event-date,.event-time,a,standard
-Thee Parkside,venue,"SF",https://www.theeparkside.com/live-music-2,.event,.event-title,.event-date,.event-time,a,standard
+Greek Theatre,venue,"Berkeley",https://thegreekberkeley.com/event-listing/,.eventBox,.eventName,.eventDate,.eventTime,a.event-button,standard
+Zellerbach Hall,venue,"Berkeley",https://secure.calperformances.org/events,.event-listing-item,.event-name,.event-date,.event-time,a,json
+The Chapel,venue,"SF",https://thechapelsf.com/,.eventItem,a,.eventDate,"",a,standard
+Public Works,venue,"SF",https://www.publicsf.com/calendar,.event,.event-name,.date-display,"",.ticket-link,standard
+1015 Folsom,venue,"SF",https://1015.com/#calendar,.event-card,.event-name,.event-date,.event-time,.event-link,standard
+Thee Parkside,venue,"SF",https://www.theeparkside.com/live-music-2,.show-item,.show-title,.show-date,.show-time,.ticket-button,standard
 Brick & Mortar Music Hall,venue,"SF",https://www.brickandmortarmusic.com/,.event,.event-title,.event-date,.event-time,a,standard
 Sweetwater Music Hall,venue,"Mill Valley",https://sweetwatermusichall.org/events/?view=list,.event-list-item,.event-title,.date-time,.date-time,a,standard
 SF Jazz,venue,"SF",https://www.sfjazz.org/calendar/,.event,.event-title,.date,.time,a,standard

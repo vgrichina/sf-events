@@ -213,29 +213,59 @@ function extractEvents(html, source, sourceUrl) {
       try {
         console.log(`  Checking for JSON data in Eventbrite HTML (length: ${html.length})`);
         
-        // Look for script tags with window.__SERVER_DATA__
-        const hasServerData = html.includes('window.__SERVER_DATA__');
-        console.log(`  Contains window.__SERVER_DATA__: ${hasServerData}`);
+        // Look for script tags containing structured data
+        let jsonData = null;
         
-        if (hasServerData) {
-          // Extract a sample of the content
-          const sampleIndex = html.indexOf('window.__SERVER_DATA__');
-          const sample = html.substr(sampleIndex, 100);
-          console.log(`  Sample of server data: ${sample}`);
+        // First try: Look for SERVER_DATA
+        if (html.includes('window.__SERVER_DATA__')) {
+          console.log(`  Found window.__SERVER_DATA__ in HTML`);
+          
+          // Safer regex pattern with robust handling of large JSON objects
+          const serverDataMatch = html.match(/window\.__SERVER_DATA__\s*=\s*(\{[\s\S]*?\}\});/);
+          if (serverDataMatch && serverDataMatch[1]) {
+            try {
+              jsonData = JSON.parse(serverDataMatch[1]);
+              console.log(`  Successfully parsed SERVER_DATA JSON`);
+            } catch (e) {
+              console.log(`  Error parsing SERVER_DATA: ${e.message}`);
+            }
+          }
         }
         
-        // Try to find the JSON data in the script tag
-        const scriptContent = html.match(/window\.__SERVER_DATA__ = ({[\s\S]*?});(?:\s*<\/script>|\s*window\.)/);
-        console.log(`  Script content match found: ${!!scriptContent}`);
-        
-        if (scriptContent && scriptContent[1]) {
-          console.log(`  Attempting to parse JSON data`);
-          const jsonData = JSON.parse(scriptContent[1]);
+        // Second try: Look for inline script with type="application/ld+json"
+        if (!jsonData) {
+          console.log(`  Looking for application/ld+json data`);
+          const jsonLdMatches = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g);
           
-          // Extract event data from the JSON
+          if (jsonLdMatches && jsonLdMatches.length > 0) {
+            console.log(`  Found ${jsonLdMatches.length} ld+json blocks`);
+            
+            // Find one that contains "Event" type
+            for (const match of jsonLdMatches) {
+              try {
+                const jsonContent = match.replace(/<script type="application\/ld\+json">/, '').replace(/<\/script>/, '');
+                const parsedJson = JSON.parse(jsonContent);
+                
+                // Check if this is an Event or array of Events
+                if (parsedJson && (parsedJson['@type'] === 'Event' || 
+                                 (Array.isArray(parsedJson) && parsedJson.some(item => item['@type'] === 'Event')))) {
+                  console.log(`  Found Event data in ld+json`);
+                  jsonData = { events: parsedJson };
+                  break;
+                }
+              } catch (e) {
+                // Continue to next match
+              }
+            }
+          }
+        }
+        
+        // Process the JSON data if found
+        if (jsonData) {
+          // Handle SERVER_DATA structure
           if (jsonData.search_data && jsonData.search_data.events && jsonData.search_data.events.results) {
             const eventResults = jsonData.search_data.events.results;
-            console.log(`  Found ${eventResults.length} events in JSON data for Eventbrite`);
+            console.log(`  Found ${eventResults.length} events in SERVER_DATA`);
             
             eventResults.forEach(event => {
               if (!event.name) return; // Skip if no name
@@ -253,6 +283,7 @@ function extractEvents(html, source, sourceUrl) {
                 hour12: true
               }) : '';
               const url = event.url;
+              const venue = event.primary_venue?.name || source.source;
               
               // Check if event is today
               let isToday = false;
@@ -267,19 +298,76 @@ function extractEvents(html, source, sourceUrl) {
                 date,
                 time,
                 url,
-                venue: source.source,
+                venue: venue,
                 region: source.region,
                 source_url: sourceUrl,
                 is_today: isToday
               });
             });
+          } 
+          // Handle ld+json structure
+          else if (jsonData.events) {
+            const eventData = Array.isArray(jsonData.events) ? jsonData.events : [jsonData.events];
+            console.log(`  Found ${eventData.length} events in ld+json data`);
             
-            // If we successfully extracted events, return them
-            if (events.length > 0) {
-              return events;
-            }
+            eventData.forEach(event => {
+              if (!event.name) return; // Skip if no name
+              
+              const title = event.name;
+              let dateObj = null;
+              
+              // Parse date from different possible formats
+              if (event.startDate) {
+                dateObj = new Date(event.startDate);
+              } else if (event.datePublished) {
+                dateObj = new Date(event.datePublished);
+              }
+              
+              const date = dateObj ? dateObj.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+              }) : '';
+              
+              const time = dateObj ? dateObj.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              }) : '';
+              
+              const url = event.url || event.offers?.url;
+              const venue = event.location?.name || source.source;
+              
+              // Check if event is today
+              let isToday = false;
+              if (dateObj) {
+                isToday = dateObj.getDate() === todayDate && 
+                          dateObj.getMonth() === todayMonth - 1 && 
+                          dateObj.getFullYear() === todayYear;
+              }
+              
+              events.push({
+                title,
+                date,
+                time,
+                url,
+                venue: venue,
+                region: source.region,
+                source_url: sourceUrl,
+                is_today: isToday
+              });
+            });
+          }
+          
+          // If we successfully extracted events, return them
+          if (events.length > 0) {
+            console.log(`  Successfully extracted ${events.length} events from Eventbrite JSON`);
+            return events;
           }
         }
+        
+        // If we get here, we couldn't find or parse the JSON data
+        console.log(`  Could not find or parse event JSON data`);
       } catch (error) {
         console.error(`  Error extracting JSON events from Eventbrite: ${error.message}`);
       }
@@ -288,87 +376,191 @@ function extractEvents(html, source, sourceUrl) {
     // Handle Bandsintown specifically
     if (source.source === 'Bandsintown') {
       try {
-        // Try to find JSON data
-        const scriptTags = html.match(/<script[^>]*?type="application\/json"[^>]*?>(.*?)<\/script>/gs);
-        if (scriptTags) {
-          let foundEvents = false;
+        console.log(`  Searching for Bandsintown event data in HTML (length: ${html.length})`);
+        
+        // Multiple approaches to find event data
+        let foundEvents = false;
+        
+        // Approach 1: Look for Next.js data in script tags
+        const scriptTags = html.match(/<script[^>]*?type="application\/json"[^>]*?>([\s\S]*?)<\/script>/gs);
+        if (scriptTags && scriptTags.length > 0) {
+          console.log(`  Found ${scriptTags.length} JSON script tags`);
           
           for (const scriptTag of scriptTags) {
             try {
-              const jsonContent = scriptTag.match(/<script[^>]*?>(.*?)<\/script>/s)[1];
-              const jsonData = JSON.parse(jsonContent);
+              const jsonContent = scriptTag.match(/<script[^>]*?>([\s\S]*?)<\/script>/s)[1];
+              const jsonData = JSON.parse(jsonContent.trim());
               
-              // Look for events data
-              if (jsonData.props && jsonData.props.pageProps && jsonData.props.pageProps.dehydratedState) {
-                const dehydratedState = jsonData.props.pageProps.dehydratedState;
+              // Check for Next.js structure (most common for Bandsintown)
+              if (jsonData.props && jsonData.props.pageProps) {
+                console.log(`  Found Next.js data structure`);
                 
-                // Extract events from various possible locations in the JSON
-                const extractEventsFromQueries = (queries) => {
-                  for (const query of queries) {
-                    if (query.state && query.state.data) {
-                      const data = query.state.data;
+                // Try different paths where event data might be stored
+                const paths = [
+                  // Direct event data in pageProps
+                  jsonData.props.pageProps.events,
+                  jsonData.props.pageProps.upcomingEvents,
+                  // Data in dehydratedState
+                  jsonData.props.pageProps.dehydratedState?.queries?.flatMap(q => q.state?.data || [])
+                ];
+                
+                for (const path of paths) {
+                  if (Array.isArray(path) && path.length > 0) {
+                    console.log(`  Found potential event array with ${path.length} items`);
+                    
+                    // Check if this looks like event data
+                    if (path[0].title || path[0].name || path[0].event_type || path[0].venue) {
+                      console.log(`  Identified as event data`);
+                      foundEvents = true;
                       
-                      // Check if this contains events
-                      if (Array.isArray(data) && data.length > 0 && data[0].title) {
-                        console.log(`  Found ${data.length} events in JSON data for Bandsintown`);
-                        foundEvents = true;
+                      path.forEach(event => {
+                        // Extract core event information
+                        const title = event.title || event.name || event.artist?.name || '';
+                        if (!title) return; // Skip events without titles
                         
-                        data.forEach(event => {
-                          if (!event.title) return;
-                          
-                          const title = event.title || event.artist?.name || '';
-                          const dateObj = event.datetime ? new Date(event.datetime) : null;
-                          const date = dateObj ? dateObj.toLocaleDateString('en-US', { 
-                            weekday: 'short', 
-                            month: 'short', 
-                            day: 'numeric' 
-                          }) : event.date_description || '';
-                          const time = dateObj ? dateObj.toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                          }) : '';
-                          const venue = event.venue?.name || '';
-                          const url = event.url || '';
-                          
-                          // Check if event is today
-                          let isToday = false;
-                          if (dateObj) {
-                            isToday = dateObj.getDate() === todayDate && 
-                                      dateObj.getMonth() === todayMonth - 1 && 
-                                      dateObj.getFullYear() === todayYear;
-                          }
-                          
-                          events.push({
-                            title,
-                            date,
-                            time,
-                            url,
-                            venue: venue || source.source,
-                            region: source.region,
-                            source_url: sourceUrl,
-                            is_today: isToday
-                          });
+                        // Handle various date formats
+                        let dateObj = null;
+                        if (event.datetime) {
+                          dateObj = new Date(event.datetime);
+                        } else if (event.date) {
+                          dateObj = new Date(event.date);
+                        } else if (event.starts_at) {
+                          dateObj = new Date(event.starts_at);
+                        }
+                        
+                        const date = dateObj ? dateObj.toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        }) : event.date_description || '';
+                        
+                        const time = dateObj ? dateObj.toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : event.time_description || '';
+                        
+                        // Get venue information
+                        const venue = event.venue?.name || 
+                                     event.location?.name || 
+                                     event.place?.name || '';
+                                     
+                        // Get URL
+                        const url = event.url || 
+                                  event.ticket_url || 
+                                  event.links?.tickets || 
+                                  event.links?.event || '';
+                        
+                        // Check if event is today
+                        let isToday = false;
+                        if (dateObj) {
+                          isToday = dateObj.getDate() === todayDate && 
+                                    dateObj.getMonth() === todayMonth - 1 && 
+                                    dateObj.getFullYear() === todayYear;
+                        }
+                        
+                        events.push({
+                          title,
+                          date,
+                          time,
+                          url,
+                          venue: venue || source.source,
+                          region: source.region,
+                          source_url: sourceUrl,
+                          is_today: isToday
                         });
+                      });
+                      
+                      // If we found events, stop looking
+                      if (events.length > 0) {
+                        console.log(`  Successfully extracted ${events.length} events from Bandsintown data`);
+                        return events;
                       }
                     }
                   }
-                };
-                
-                // Try to find events in different possible locations
-                if (dehydratedState.queries) {
-                  extractEventsFromQueries(dehydratedState.queries);
                 }
+              }
+            } catch (e) {
+              console.log(`  Error processing script tag: ${e.message}`);
+              // Continue to next script tag
+            }
+          }
+        }
+        
+        // Approach 2: Look for schema.org JSON-LD data
+        const jsonLdTags = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g);
+        if (!foundEvents && jsonLdTags && jsonLdTags.length > 0) {
+          console.log(`  Found ${jsonLdTags.length} JSON-LD tags`);
+          
+          for (const tag of jsonLdTags) {
+            try {
+              const content = tag.replace(/<script type="application\/ld\+json">/, '')
+                                .replace(/<\/script>/, '').trim();
+              const data = JSON.parse(content);
+              
+              // Handle single event or array of events
+              const eventData = data['@type'] === 'Event' ? [data] : 
+                              Array.isArray(data) && data[0] && data[0]['@type'] === 'Event' ? data : null;
+              
+              if (eventData) {
+                console.log(`  Found schema.org Event data`);
+                foundEvents = true;
                 
-                // If we found events, return them
-                if (foundEvents) {
+                eventData.forEach(event => {
+                  if (!event.name) return;
+                  
+                  const title = event.name;
+                  const dateObj = event.startDate ? new Date(event.startDate) : null;
+                  
+                  const date = dateObj ? dateObj.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  }) : '';
+                  
+                  const time = dateObj ? dateObj.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  }) : '';
+                  
+                  const venue = event.location?.name || '';
+                  const url = event.url || (event.offers && event.offers[0]?.url) || '';
+                  
+                  // Check if event is today
+                  let isToday = false;
+                  if (dateObj) {
+                    isToday = dateObj.getDate() === todayDate && 
+                              dateObj.getMonth() === todayMonth - 1 && 
+                              dateObj.getFullYear() === todayYear;
+                  }
+                  
+                  events.push({
+                    title,
+                    date,
+                    time,
+                    url,
+                    venue: venue || source.source,
+                    region: source.region,
+                    source_url: sourceUrl,
+                    is_today: isToday
+                  });
+                });
+                
+                if (events.length > 0) {
+                  console.log(`  Extracted ${events.length} events from schema.org data`);
                   return events;
                 }
               }
             } catch (e) {
-              // Skip this script tag if it's not valid JSON
+              // Continue to next tag
             }
           }
+        }
+        
+        // No event data found, log and continue to standard parsing
+        if (!foundEvents) {
+          console.log(`  No event data found in JSON structures`);
         }
       } catch (error) {
         console.error(`  Error extracting JSON events from Bandsintown: ${error.message}`);
@@ -401,6 +593,7 @@ function extractEvents(html, source, sourceUrl) {
       let date = '';
       let time = '';
       let url = '';
+      let venueNameFromHTML = '';
       
       // Extract title
       if (source.title_selector) {
@@ -419,6 +612,11 @@ function extractEvents(html, source, sourceUrl) {
       // Extract time
       if (source.time_selector) {
         time = $(this).find(source.time_selector).first().text().trim();
+      }
+      
+      // Special handling for Songkick venue information
+      if (source.source === 'Songkick' && source.time_selector) {
+        venueNameFromHTML = $(this).find(source.time_selector).first().text().trim();
       }
       
       // Extract URL
@@ -474,17 +672,31 @@ function extractEvents(html, source, sourceUrl) {
         }
       }
       
-      // Add event to the list
-      events.push({
-        title,
-        date,
-        time,
-        url,
-        venue: source.source,
-        region: source.region,
-        source_url: sourceUrl,
-        is_today: isToday
-      });
+      // Special handling for Songkick data
+      if (source.source === 'Songkick') {
+        events.push({
+          title,
+          date, // This will be the actual date now
+          time: '',
+          url,
+          venue: venueNameFromHTML || source.source, // Use the venue name from HTML
+          region: source.region,
+          source_url: sourceUrl,
+          is_today: isToday
+        });
+      } else {
+        // Normal handling for other venues
+        events.push({
+          title,
+          date,
+          time,
+          url,
+          venue: source.source,
+          region: source.region,
+          source_url: sourceUrl,
+          is_today: isToday
+        });
+      }
     } catch (error) {
       console.error(`  Error extracting event: ${error.message}`);
     }

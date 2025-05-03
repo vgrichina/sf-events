@@ -1,45 +1,49 @@
 # Live Music Events in SF Bay Area
 
-## Songkick
+## Bottom of the Hill
 
 ### Dustbowlchampion
-- **Date:** Bottom of the Hill
 - **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42555303-dustbowlchampion-at-bottom-of-the-hill)
 
+## Kilowatt
+
 ### Ritualz
-- **Date:** Kilowatt
 - **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42566341-ritualz-at-kilowatt)
 
+## Yoshi's
+
 ### The Kingston Trio
-- **Date:** Yoshi's
 - **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42561429-kingston-trio-at-yoshis)
 
+## Halcyon Sf
+
 ### Riva Starr
-- **Date:** Halcyon Sf
 - **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42551120-riva-starr-at-halcyon-sf)
 
+## The Chapel
+
 ### S.G. Goodman
-- **Date:** The Chapel
 - **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42558620-sg-goodman-at-chapel)
 
-### Alicia Villarreal
-- **Date:** San Jose Civic
-- **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42543991-alicia-villarreal-at-san-jose-civic)
-
 ### Thee Marloes
-- **Date:** The Chapel
 - **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42549689-thee-marloes-at-chapel)
 
-### T78
-- **Date:** 1015 Folsom
-- **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42563424-t78-at-1015-folsom)
+## San Jose Civic
+
+### Alicia Villarreal
+- **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42543991-alicia-villarreal-at-san-jose-civic)
 
 ### Yolanda del Rio
-- **Date:** San Jose Civic
 - **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42568316-yolanda-del-rio-at-san-jose-civic)
 
+## 1015 Folsom
+
+### T78
+- **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42563424-t78-at-1015-folsom)
+
+## Guild Theatre
+
 ### Animotion
-- **Date:** Guild Theatre
 - **Event Link:** [Get Tickets](https://www.songkick.com/concerts/42560914-animotion-at-guild-theatre)
 
 ## The Independent
