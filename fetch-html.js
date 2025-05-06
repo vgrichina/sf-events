@@ -15,7 +15,7 @@ const sanitizeFilename = (url) => {
 };
 
 // Main function to fetch and save HTML
-async function fetchAndSaveHtml() {
+async function fetchAndSaveHtml(targetVenue = null) {
   // Create a list to store results for reporting
   const results = [];
   
@@ -25,7 +25,17 @@ async function fetchAndSaveHtml() {
     .pipe(csv())
     .on('data', (data) => sources.push(data))
     .on('end', async () => {
-      console.log(`Found ${sources.length} sources to process`);
+      // Filter sources if a target venue is specified
+      const sourcesToProcess = targetVenue 
+        ? sources.filter(s => s.source.toLowerCase() === targetVenue.toLowerCase())
+        : sources;
+      
+      if (targetVenue && sourcesToProcess.length === 0) {
+        console.error(`Venue "${targetVenue}" not found in sources.csv`);
+        return;
+      }
+      
+      console.log(`Found ${sourcesToProcess.length} source${sourcesToProcess.length === 1 ? '' : 's'} to process`);
       
       // Launch browser
       const browser = await puppeteer.launch({
@@ -34,7 +44,7 @@ async function fetchAndSaveHtml() {
       });
       
       // Process each source
-      for (const source of sources) {
+      for (const source of sourcesToProcess) {
         try {
           console.log(`Processing: ${source.source} - ${source.url}`);
           
@@ -93,7 +103,8 @@ async function fetchAndSaveHtml() {
               title: source.title_selector,
               date: source.date_selector,
               time: source.time_selector,
-              url: source.url_selector
+              url: source.url_selector,
+              extraction_type: source.extraction_type
             }
           });
           
@@ -137,7 +148,11 @@ async function fetchAndSaveHtml() {
     });
 }
 
+// Process command-line arguments
+const args = process.argv.slice(2);
+const targetVenue = args.length > 0 ? args[0] : null;
+
 // Run the main function
-fetchAndSaveHtml().catch(err => {
+fetchAndSaveHtml(targetVenue).catch(err => {
   console.error('Fatal error:', err);
 });
