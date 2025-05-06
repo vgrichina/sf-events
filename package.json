@@ -5,7 +5,9 @@
   "scripts": {
     "fetch": "node fetch-html.js",
     "process": "node process-html.js",
+    "cleanup": "node cleanup-events.js",
     "events": "npm run fetch && npm run process",
+    "tonight": "npm run fetch && npm run process && npm run cleanup",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

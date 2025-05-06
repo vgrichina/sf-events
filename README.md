@@ -21,9 +21,13 @@ A tool to fetch and process live music events in San Francisco, Berkeley, and Oa
    ```
    This will parse the HTML files and extract event information using the CSS selectors specified in sources.csv.
 
-4. Or run both in sequence:
+4. Or run all steps in sequence:
    ```
+   # Run fetch and process
    npm run events
+   
+   # Run fetch, process, and LLM cleanup (requires API key)
+   npm run tonight
    ```
 
 ## How It Works
@@ -79,6 +83,21 @@ For sites that load event data dynamically (like Eventbrite and Bandsintown), we
 1. Set `extraction_type` to "json" in sources.csv
 2. The script will look for embedded JSON data structures containing event information
 3. If JSON extraction fails, it will fall back to standard HTML parsing
+
+### LLM-Powered Event Cleanup
+
+The tool can use Claude 3.5 Haiku via the OpenRouter API to clean up and normalize the extracted event data:
+
+1. Run `npm run cleanup` after processing events to clean the data
+2. Or use `npm run tonight` to run the entire pipeline (fetch, process, cleanup)
+3. Requires an OpenRouter API key set in the `OPENROUTER_API_KEY` environment variable
+
+The LLM cleanup provides these benefits:
+- Normalizes date and time formats
+- Fixes parsing issues and irregular spacing
+- Verifies that "is_today" flags are accurate
+- Removes duplicate events
+- Creates consistent formatting
 
 ### Date Filtering
 

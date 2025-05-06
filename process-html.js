@@ -16,21 +16,60 @@ const todayDate = today.getDate();
 const todayMonth = today.getMonth() + 1; // JS months are 0-indexed
 const todayYear = today.getFullYear();
 
+// Utility to sanitize URL for filenames (same function as in fetch-html.js)
+const sanitizeFilename = (url) => {
+  return url.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+};
+
+// Function to generate HTML file path from source data
+const getHtmlFilePath = (source) => {
+  const filename = `${source.source.replace(/\s+/g, '_')}_${sanitizeFilename(source.url)}.html`;
+  return path.join(__dirname, 'html_dumps', filename);
+};
+
 // Load the CSV file with sources and selectors
 const sources = [];
 fs.createReadStream(path.join(__dirname, 'sources.csv'))
   .pipe(csv())
-  .on('data', (data) => sources.push(data))
+  .on('data', (data) => {
+    // Debug CSV data for Bottom of the Hill
+    if (data.source === 'Bottom of the Hill') {
+      console.log('CSV DATA FOR BOTTOM OF THE HILL:');
+      console.log(JSON.stringify(data, null, 2));
+    }
+    sources.push(data);
+  })
   .on('end', () => {
-    // Load fetch results to get file paths
-    const fetchResultsPath = path.join(__dirname, 'fetch_results.json');
-    if (!fs.existsSync(fetchResultsPath)) {
-      console.error('fetch_results.json not found! Please run fetch-html.js first.');
+    const htmlDumpsDir = path.join(__dirname, 'html_dumps');
+    
+    // Check if HTML dumps directory exists
+    if (!fs.existsSync(htmlDumpsDir)) {
+      console.error('html_dumps directory not found! Please run fetch-html.js first.');
       process.exit(1);
     }
-
-    const fetchResults = JSON.parse(fs.readFileSync(fetchResultsPath, 'utf8'));
-    const successfulFetches = fetchResults.filter(result => result.success);
+    
+    // Find sources that have been successfully fetched
+    const sourcesWithData = sources.filter(source => {
+      const htmlPath = getHtmlFilePath(source);
+      return fs.existsSync(htmlPath);
+    });
+    
+    console.log(`Found ${sourcesWithData.length} out of ${sources.length} sources with HTML data`);
+    
+    // Convert to format similar to old fetchResults for compatibility
+    const successfulFetches = sourcesWithData.map(source => ({
+      source: source.source,
+      url: source.url,
+      success: true,
+      file: path.basename(getHtmlFilePath(source)),
+      selectors: {
+        container: source.container_selector,
+        title: source.title_selector,
+        date: source.date_selector,
+        time: source.time_selector,
+        url: source.url_selector
+      }
+    }));
     
     // Process the HTML files
     processHtmlFiles(successfulFetches, sources);
@@ -89,9 +128,24 @@ function processHtmlFiles(fetches, sources) {
         return;
       }
       
+      // Debug source info for Bottom of the Hill
+      if (fetch.source === 'Bottom of the Hill') {
+        console.log(`  DEBUG SOURCE INFO:`, JSON.stringify(sourceInfo, null, 2));
+      }
+      
       // Read HTML file
       const htmlPath = path.join(__dirname, 'html_dumps', fetch.file);
       const html = fs.readFileSync(htmlPath, 'utf8');
+      
+      // Debug for Bottom of the Hill
+      if (sourceInfo.source === 'Bottom of the Hill') {
+        console.log(`  Using selectors from sources.csv:`);
+        console.log(`    Container: ${sourceInfo.container_selector}`);
+        console.log(`    Title: ${sourceInfo.title_selector}`);
+        console.log(`    Date: ${sourceInfo.date_selector}`);
+        console.log(`    Time: ${sourceInfo.time_selector}`);
+        console.log(`    URL: ${sourceInfo.url_selector}`);
+      }
       
       // Extract events
       const events = extractEvents(html, sourceInfo, fetch.url);
@@ -306,12 +360,21 @@ function processHtmlFiles(fetches, sources) {
   console.log(`- Filtered ${todaysEvents.length} events for today (${todayString})`);
   console.log(`- Saved results to ${outputDir}`);
   console.log(`- Saved tonight's events to tonights_events.md`);
+  console.log(`\nTip: Run 'npm run cleanup' to use Claude to clean up and normalize the event data`);
 }
 
 // Function to extract events from HTML using source-specific selectors
 function extractEvents(html, source, sourceUrl) {
   const events = [];
   const $ = cheerio.load(html);
+  
+  // Debug all properties of the source object for Bottom of the Hill
+  if (source.source === 'Bottom of the Hill') {
+    console.log('SOURCE OBJECT PROPERTIES:');
+    for (const prop in source) {
+      console.log(`${prop}: ${source[prop]}`);
+    }
+  }
   
   // Special handling for JSON extraction type
   if (source.extraction_type === 'json') {
@@ -768,6 +831,33 @@ function extractEvents(html, source, sourceUrl) {
     return events;
   }
   
+  // Add debugging for Bottom of the Hill
+  if (source.source === 'Bottom of the Hill') {
+    console.log(`  DEBUG: Using container selector: ${source.container_selector}`);
+    console.log(`  DEBUG: Using title selector: ${source.title_selector}`);
+    console.log(`  DEBUG: Using date selector: ${source.date_selector}`);
+    console.log(`  DEBUG: Using time selector: ${source.time_selector}`);
+    console.log(`  DEBUG: Using URL selector: ${source.url_selector}`);
+    
+    // Look for specific elements we know should exist
+    const dateElements = $('span.date');
+    console.log(`  DEBUG: Found ${dateElements.length} date elements`);
+    
+    const bandElements = $('big.band');
+    console.log(`  DEBUG: Found ${bandElements.length} band elements`);
+    
+    const timeElements = $('span.time');
+    console.log(`  DEBUG: Found ${timeElements.length} time elements`);
+    
+    if (bandElements.length > 0) {
+      console.log(`  DEBUG: First band name: "${$(bandElements[0]).text().trim()}"`);
+    }
+    
+    if (dateElements.length > 0) {
+      console.log(`  DEBUG: First date text: "${$(dateElements[0]).text().trim()}"`);
+    }
+  }
+  
   // Find all event containers
   const containers = $(source.container_selector);
   console.log(`  Found ${containers.length} potential event containers for ${source.source}`);
@@ -785,6 +875,12 @@ function extractEvents(html, source, sourceUrl) {
       let url = '';
       let venueNameFromHTML = '';
       
+      // Debug each container for Bottom of the Hill
+      if (source.source === 'Bottom of the Hill' && i === 0) {
+        console.log(`  DEBUG: Container ${i} HTML structure:`);
+        console.log(`  ${$(this).html().substring(0, 200)}...`);
+      }
+      
       // Extract title
       if (source.title_selector) {
         title = $(this).find(source.title_selector).first().text().trim();
@@ -792,16 +888,60 @@ function extractEvents(html, source, sourceUrl) {
         if (!title && $(this).find(source.title_selector).find('a').length) {
           title = $(this).find(source.title_selector).find('a').first().text().trim();
         }
+        
+        if (source.source === 'Bottom of the Hill' && i === 0) {
+          console.log(`  DEBUG: Title elements found: ${$(this).find(source.title_selector).length}`);
+          console.log(`  DEBUG: Title text: "${title}"`);
+        }
       }
       
       // Extract date
       if (source.date_selector) {
-        date = $(this).find(source.date_selector).first().text().trim();
+        // Join text of all date elements
+        const dateElements = $(this).find(source.date_selector);
+        const dateTexts = [];
+        dateElements.each(function() {
+          const text = $(this).text().trim();
+          if (text) {
+            dateTexts.push(text);
+          }
+        });
+        
+        // Join and clean up all whitespace (newlines, multiple spaces, etc)
+        date = dateTexts.join(' ').replace(/\s+/g, ' ').trim();
+        
+        if (source.source === 'Bottom of the Hill' && i === 0) {
+          console.log(`  DEBUG: Date elements found: ${dateElements.length}`);
+          console.log(`  DEBUG: Date text: "${date}"`);
+          
+          // Show all date texts found
+          if (dateElements.length > 1) {
+            dateElements.each(function(j) {
+              console.log(`    DEBUG: Date ${j} text: "${$(this).text().trim()}"`);
+            });
+          }
+        }
       }
       
       // Extract time
       if (source.time_selector) {
-        time = $(this).find(source.time_selector).first().text().trim();
+        // Join text of all time elements
+        const timeElements = $(this).find(source.time_selector);
+        const timeTexts = [];
+        timeElements.each(function() {
+          const text = $(this).text().trim();
+          if (text) {
+            timeTexts.push(text);
+          }
+        });
+        
+        // Join and clean up all whitespace (newlines, multiple spaces, etc)
+        time = timeTexts.join(' ').replace(/\s+/g, ' ').trim();
+        
+        if (source.source === 'Bottom of the Hill' && i === 0) {
+          console.log(`  DEBUG: Time elements found: ${timeElements.length}`);
+          console.log(`  DEBUG: Time text: "${time}"`);
+        }
       }
       
       // Special handling for Songkick venue information
@@ -813,6 +953,18 @@ function extractEvents(html, source, sourceUrl) {
       if (source.url_selector) {
         const urlElement = $(this).find(source.url_selector).first();
         url = urlElement.attr('href') || '';
+        
+        if (source.source === 'Bottom of the Hill' && i === 0) {
+          console.log(`  DEBUG: URL elements found: ${$(this).find(source.url_selector).length}`);
+          console.log(`  DEBUG: URL: "${url}"`);
+          
+          // Show all URLs found 
+          if ($(this).find(source.url_selector).length > 0) {
+            $(this).find(source.url_selector).each(function(j) {
+              console.log(`    DEBUG: URL ${j}: "${$(this).attr('href') || 'no href'}"`);
+            });
+          }
+        }
         
         // If URL is relative, make it absolute
         if (url && !url.startsWith('http')) {
@@ -827,6 +979,9 @@ function extractEvents(html, source, sourceUrl) {
       
       // Skip if no title or the title is too long (probably not an event)
       if (!title || title.length > 100) {
+        if (source.source === 'Bottom of the Hill' && i === 0) {
+          console.log(`  DEBUG: Skipping event - ${!title ? 'No title found' : 'Title too long'}`);
+        }
         return;
       }
       
