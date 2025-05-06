@@ -16,6 +16,10 @@ const todayDate = today.getDate();
 const todayMonth = today.getMonth() + 1; // JS months are 0-indexed
 const todayYear = today.getFullYear();
 
+// Process command line arguments
+const args = process.argv.slice(2);
+const DEBUG_SOURCE = args[0]; // Optional source name to debug
+
 // Utility to sanitize URL for filenames (same function as in fetch-html.js)
 const sanitizeFilename = (url) => {
   return url.replace(/[^a-z0-9]/gi, '_').toLowerCase();
@@ -32,9 +36,9 @@ const sources = [];
 fs.createReadStream(path.join(__dirname, 'sources.csv'))
   .pipe(csv())
   .on('data', (data) => {
-    // Debug CSV data for Bottom of the Hill
-    if (data.source === 'Bottom of the Hill') {
-      console.log('CSV DATA FOR BOTTOM OF THE HILL:');
+    // Debug CSV data for specific source if specified
+    if (DEBUG_SOURCE && data.source === DEBUG_SOURCE) {
+      console.log(`CSV DATA FOR ${DEBUG_SOURCE}:`);
       console.log(JSON.stringify(data, null, 2));
     }
     sources.push(data);
@@ -128,23 +132,24 @@ function processHtmlFiles(fetches, sources) {
         return;
       }
       
-      // Debug source info for Bottom of the Hill
-      if (fetch.source === 'Bottom of the Hill') {
-        console.log(`  DEBUG SOURCE INFO:`, JSON.stringify(sourceInfo, null, 2));
+      // Debug source info for specified source
+      if (DEBUG_SOURCE && fetch.source === DEBUG_SOURCE) {
+        console.log(`  DEBUG SOURCE INFO FOR ${DEBUG_SOURCE}:`, JSON.stringify(sourceInfo, null, 2));
       }
       
       // Read HTML file
       const htmlPath = path.join(__dirname, 'html_dumps', fetch.file);
       const html = fs.readFileSync(htmlPath, 'utf8');
       
-      // Debug for Bottom of the Hill
-      if (sourceInfo.source === 'Bottom of the Hill') {
-        console.log(`  Using selectors from sources.csv:`);
+      // Debug selectors for specified source
+      if (DEBUG_SOURCE && sourceInfo.source === DEBUG_SOURCE) {
+        console.log(`  Using selectors from sources.csv for ${DEBUG_SOURCE}:`);
         console.log(`    Container: ${sourceInfo.container_selector}`);
         console.log(`    Title: ${sourceInfo.title_selector}`);
         console.log(`    Date: ${sourceInfo.date_selector}`);
         console.log(`    Time: ${sourceInfo.time_selector}`);
         console.log(`    URL: ${sourceInfo.url_selector}`);
+        console.log(`    Extraction Type: ${sourceInfo.extraction_type}`);
       }
       
       // Extract events
@@ -368,9 +373,9 @@ function extractEvents(html, source, sourceUrl) {
   const events = [];
   const $ = cheerio.load(html);
   
-  // Debug all properties of the source object for Bottom of the Hill
-  if (source.source === 'Bottom of the Hill') {
-    console.log('SOURCE OBJECT PROPERTIES:');
+  // Debug all properties of the source object for specified source
+  if (DEBUG_SOURCE && source.source === DEBUG_SOURCE) {
+    console.log(`SOURCE OBJECT PROPERTIES FOR ${DEBUG_SOURCE}:`);
     for (const prop in source) {
       console.log(`${prop}: ${source[prop]}`);
     }
@@ -831,30 +836,40 @@ function extractEvents(html, source, sourceUrl) {
     return events;
   }
   
-  // Add debugging for Bottom of the Hill
-  if (source.source === 'Bottom of the Hill') {
-    console.log(`  DEBUG: Using container selector: ${source.container_selector}`);
-    console.log(`  DEBUG: Using title selector: ${source.title_selector}`);
-    console.log(`  DEBUG: Using date selector: ${source.date_selector}`);
-    console.log(`  DEBUG: Using time selector: ${source.time_selector}`);
-    console.log(`  DEBUG: Using URL selector: ${source.url_selector}`);
+  // Add debugging for specified source
+  if (DEBUG_SOURCE && source.source === DEBUG_SOURCE) {
+    console.log(`  DEBUG ${DEBUG_SOURCE}: Using container selector: ${source.container_selector}`);
+    console.log(`  DEBUG ${DEBUG_SOURCE}: Using title selector: ${source.title_selector}`);
+    console.log(`  DEBUG ${DEBUG_SOURCE}: Using date selector: ${source.date_selector}`);
+    console.log(`  DEBUG ${DEBUG_SOURCE}: Using time selector: ${source.time_selector}`);
+    console.log(`  DEBUG ${DEBUG_SOURCE}: Using URL selector: ${source.url_selector}`);
     
-    // Look for specific elements we know should exist
-    const dateElements = $('span.date');
-    console.log(`  DEBUG: Found ${dateElements.length} date elements`);
-    
-    const bandElements = $('big.band');
-    console.log(`  DEBUG: Found ${bandElements.length} band elements`);
-    
-    const timeElements = $('span.time');
-    console.log(`  DEBUG: Found ${timeElements.length} time elements`);
-    
-    if (bandElements.length > 0) {
-      console.log(`  DEBUG: First band name: "${$(bandElements[0]).text().trim()}"`);
+    // Look for specific elements based on selectors
+    if (source.date_selector) {
+      const dateElements = $(source.date_selector);
+      console.log(`  DEBUG ${DEBUG_SOURCE}: Found ${dateElements.length} date elements`);
+      
+      if (dateElements.length > 0) {
+        console.log(`  DEBUG ${DEBUG_SOURCE}: First date text: "${$(dateElements[0]).text().trim()}"`);
+      }
     }
     
-    if (dateElements.length > 0) {
-      console.log(`  DEBUG: First date text: "${$(dateElements[0]).text().trim()}"`);
+    if (source.title_selector) {
+      const titleElements = $(source.title_selector);
+      console.log(`  DEBUG ${DEBUG_SOURCE}: Found ${titleElements.length} title elements`);
+      
+      if (titleElements.length > 0) {
+        console.log(`  DEBUG ${DEBUG_SOURCE}: First title text: "${$(titleElements[0]).text().trim()}"`);
+      }
+    }
+    
+    if (source.time_selector) {
+      const timeElements = $(source.time_selector);
+      console.log(`  DEBUG ${DEBUG_SOURCE}: Found ${timeElements.length} time elements`);
+      
+      if (timeElements.length > 0) {
+        console.log(`  DEBUG ${DEBUG_SOURCE}: First time text: "${$(timeElements[0]).text().trim()}"`);
+      }
     }
   }
   
@@ -875,9 +890,9 @@ function extractEvents(html, source, sourceUrl) {
       let url = '';
       let venueNameFromHTML = '';
       
-      // Debug each container for Bottom of the Hill
-      if (source.source === 'Bottom of the Hill' && i === 0) {
-        console.log(`  DEBUG: Container ${i} HTML structure:`);
+      // Debug each container for specified source
+      if (DEBUG_SOURCE && source.source === DEBUG_SOURCE && i === 0) {
+        console.log(`  DEBUG ${DEBUG_SOURCE}: Container ${i} HTML structure:`);
         console.log(`  ${$(this).html().substring(0, 200)}...`);
       }
       
@@ -889,9 +904,9 @@ function extractEvents(html, source, sourceUrl) {
           title = $(this).find(source.title_selector).find('a').first().text().trim();
         }
         
-        if (source.source === 'Bottom of the Hill' && i === 0) {
-          console.log(`  DEBUG: Title elements found: ${$(this).find(source.title_selector).length}`);
-          console.log(`  DEBUG: Title text: "${title}"`);
+        if (DEBUG_SOURCE && source.source === DEBUG_SOURCE && i === 0) {
+          console.log(`  DEBUG ${DEBUG_SOURCE}: Title elements found: ${$(this).find(source.title_selector).length}`);
+          console.log(`  DEBUG ${DEBUG_SOURCE}: Title text: "${title}"`);
         }
       }
       
@@ -910,14 +925,14 @@ function extractEvents(html, source, sourceUrl) {
         // Join and clean up all whitespace (newlines, multiple spaces, etc)
         date = dateTexts.join(' ').replace(/\s+/g, ' ').trim();
         
-        if (source.source === 'Bottom of the Hill' && i === 0) {
-          console.log(`  DEBUG: Date elements found: ${dateElements.length}`);
-          console.log(`  DEBUG: Date text: "${date}"`);
+        if (DEBUG_SOURCE && source.source === DEBUG_SOURCE && i === 0) {
+          console.log(`  DEBUG ${DEBUG_SOURCE}: Date elements found: ${dateElements.length}`);
+          console.log(`  DEBUG ${DEBUG_SOURCE}: Date text: "${date}"`);
           
           // Show all date texts found
           if (dateElements.length > 1) {
             dateElements.each(function(j) {
-              console.log(`    DEBUG: Date ${j} text: "${$(this).text().trim()}"`);
+              console.log(`    DEBUG ${DEBUG_SOURCE}: Date ${j} text: "${$(this).text().trim()}"`);
             });
           }
         }
@@ -938,9 +953,9 @@ function extractEvents(html, source, sourceUrl) {
         // Join and clean up all whitespace (newlines, multiple spaces, etc)
         time = timeTexts.join(' ').replace(/\s+/g, ' ').trim();
         
-        if (source.source === 'Bottom of the Hill' && i === 0) {
-          console.log(`  DEBUG: Time elements found: ${timeElements.length}`);
-          console.log(`  DEBUG: Time text: "${time}"`);
+        if (DEBUG_SOURCE && source.source === DEBUG_SOURCE && i === 0) {
+          console.log(`  DEBUG ${DEBUG_SOURCE}: Time elements found: ${timeElements.length}`);
+          console.log(`  DEBUG ${DEBUG_SOURCE}: Time text: "${time}"`);
         }
       }
       
@@ -954,14 +969,14 @@ function extractEvents(html, source, sourceUrl) {
         const urlElement = $(this).find(source.url_selector).first();
         url = urlElement.attr('href') || '';
         
-        if (source.source === 'Bottom of the Hill' && i === 0) {
-          console.log(`  DEBUG: URL elements found: ${$(this).find(source.url_selector).length}`);
-          console.log(`  DEBUG: URL: "${url}"`);
+        if (DEBUG_SOURCE && source.source === DEBUG_SOURCE && i === 0) {
+          console.log(`  DEBUG ${DEBUG_SOURCE}: URL elements found: ${$(this).find(source.url_selector).length}`);
+          console.log(`  DEBUG ${DEBUG_SOURCE}: URL: "${url}"`);
           
           // Show all URLs found 
           if ($(this).find(source.url_selector).length > 0) {
             $(this).find(source.url_selector).each(function(j) {
-              console.log(`    DEBUG: URL ${j}: "${$(this).attr('href') || 'no href'}"`);
+              console.log(`    DEBUG ${DEBUG_SOURCE}: URL ${j}: "${$(this).attr('href') || 'no href'}"`);
             });
           }
         }
@@ -979,8 +994,8 @@ function extractEvents(html, source, sourceUrl) {
       
       // Skip if no title or the title is too long (probably not an event)
       if (!title || title.length > 100) {
-        if (source.source === 'Bottom of the Hill' && i === 0) {
-          console.log(`  DEBUG: Skipping event - ${!title ? 'No title found' : 'Title too long'}`);
+        if (DEBUG_SOURCE && source.source === DEBUG_SOURCE && i === 0) {
+          console.log(`  DEBUG ${DEBUG_SOURCE}: Skipping event - ${!title ? 'No title found' : 'Title too long'}`);
         }
         return;
       }
