@@ -113,9 +113,29 @@ For each event, the script checks:
 2. If the date text contains today's date in various formats
 3. If the date can be parsed to match today's date
 
+## Debugging
+
+To debug issues with specific venues, you can pass the venue name as a command-line argument to the processing script:
+
+```
+node process-html.js "Venue Name"
+```
+
+For example:
+```
+node process-html.js "Bottom of the Hill"
+```
+
+This will enable detailed debug output for that specific venue, including:
+- Selector information
+- HTML structure of containers
+- Elements found for each selector
+- Extracted content from each selector
+
 ## Notes
 
 - Some venues use anti-scraping measures that may prevent automatic extraction
 - The CSS selectors may need to be updated if venues change their website designs
 - The script uses a random delay between requests to avoid being blocked
 - For sites with advanced bot protection, you may need to use more sophisticated techniques
+- You can also run `node fetch-html.js "Venue Name"` to fetch only a specific venue
