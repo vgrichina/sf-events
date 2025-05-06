@@ -99,19 +99,19 @@ The LLM cleanup provides these benefits:
 - Removes duplicate events
 - Creates consistent formatting
 
-### Date Filtering
+### Date Processing
 
-The script now actively filters for today's events with support for various date formats:
-- Direct matches like "today" or "tonight"
-- Month/day formats like "May 2" or "5/2"
-- Day abbreviations like "Fri" combined with the date
-- Numeric formats like "5.2" (M.D)
-- Full ISO dates
+The core processing script extracts all events without date filtering, preserving:
+- Various date formats like "May 2", "5/2", "Tuesday May 6 2025"
+- Time information in different formats
+- Original venue and region data
 
-For each event, the script checks:
-1. If the event has been marked as today's event by the extraction logic
-2. If the date text contains today's date in various formats
-3. If the date can be parsed to match today's date
+The LLM cleanup step (via the `cleanup-events.js` script) handles:
+1. Date normalization to consistent formats
+2. Filtering events for the current date
+3. Fixing date formatting and parsing issues
+4. Correcting venue information
+5. Verifying that events are actually for today
 
 ## Debugging
 

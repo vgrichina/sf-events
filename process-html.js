@@ -163,102 +163,8 @@ function processHtmlFiles(fetches, sources) {
     }
   });
   
-  // Filter for today's events
-  const todaysEvents = allEvents.filter(event => {
-    if (event.is_today) {
-      return true;
-    }
-    
-    if (event.date) {
-      const lowerDate = event.date.toLowerCase();
-      
-      // Check for today's date patterns
-      if (lowerDate.includes('today') || lowerDate.includes('tonight')) {
-        return true;
-      }
-      
-      // Format the current date in different formats to check against
-      const dayOfWeek = today.getDay();
-      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-      const shortDayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-      
-      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
-                          'july', 'august', 'september', 'october', 'november', 'december'];
-      const shortMonthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-      
-      // Very strict pattern matching for today's date
-      
-      // Check for full format like "Friday, May 2" or "Fri May 2"
-      if ((lowerDate.includes(dayNames[dayOfWeek]) || lowerDate.includes(shortDayNames[dayOfWeek])) && 
-          (lowerDate.includes(monthNames[todayMonth - 1]) || lowerDate.includes(shortMonthNames[todayMonth - 1])) &&
-          lowerDate.includes(todayDate.toString())) {
-        return true;
-      }
-      
-      // Check for format like "May 2" - month name + date
-      if ((lowerDate.includes(monthNames[todayMonth - 1]) || lowerDate.includes(shortMonthNames[todayMonth - 1])) &&
-          (lowerDate.includes(` ${todayDate}`) || 
-           lowerDate.includes(`${todayDate},`) || 
-           lowerDate.includes(`${todayDate} `) || 
-           lowerDate.endsWith(`${todayDate}`))) {
-        // Only match if it doesn't have a different month or date
-        const otherMonths = [...monthNames, ...shortMonthNames].filter(m => 
-          m !== monthNames[todayMonth - 1] && m !== shortMonthNames[todayMonth - 1]);
-        
-        const hasOtherMonth = otherMonths.some(month => lowerDate.includes(month));
-        if (!hasOtherMonth) {
-          return true;
-        }
-      }
-      
-      // Check for date format like "5.2" (M.D)
-      const dateFormatRegex = new RegExp(`\\b${todayMonth}\\.${todayDate}\\b`);
-      if (dateFormatRegex.test(lowerDate)) {
-        return true;
-      }
-      
-      // Check for numeric format like "5/2"
-      const slashDateRegex = new RegExp(`\\b${todayMonth}\\/${todayDate}\\b`);
-      if (slashDateRegex.test(lowerDate)) {
-        return true;
-      }
-      
-      // Try to parse the date string to see if it matches today
-      try {
-        // For strings like "5.2", "5/2", etc.
-        const dateString = lowerDate.trim();
-        let dateObj;
-        
-        // Try different parsing approaches
-        if (/^\d+\.\d+$/.test(dateString)) {
-          // Format like "5.2"
-          const [month, day] = dateString.split('.').map(Number);
-          dateObj = new Date(todayYear, month - 1, day);
-        } else if (/^\d+\/\d+$/.test(dateString)) {
-          // Format like "5/2"
-          const [month, day] = dateString.split('/').map(Number);
-          dateObj = new Date(todayYear, month - 1, day);
-        } else {
-          // Try standard parsing
-          dateObj = new Date(dateString);
-        }
-        
-        // Check if parsed date is today
-        if (!isNaN(dateObj.getTime())) {
-          const isMatchingDate = dateObj.getDate() === todayDate && 
-                              dateObj.getMonth() === todayMonth - 1 && 
-                              (dateObj.getFullYear() === todayYear || dateObj.getFullYear() === 0);
-          if (isMatchingDate) {
-            return true;
-          }
-        }
-      } catch (e) {
-        // Parsing failed, continue with other checks
-      }
-    }
-    
-    return false;
-  });
+  // No filtering by date - we'll store all events and let LLM handle date filtering
+  const extractedEvents = allEvents;
   
   // Save all events to JSON
   fs.writeFileSync(
@@ -266,57 +172,20 @@ function processHtmlFiles(fetches, sources) {
     JSON.stringify(allEvents, null, 2)
   );
   
-  // Save today's events to JSON
+  // Save the recent batch of events to JSON with the date in the filename
   fs.writeFileSync(
     path.join(outputDir, `events_${todayString}.json`), 
-    JSON.stringify(todaysEvents, null, 2)
+    JSON.stringify(extractedEvents, null, 2)
   );
   
-  // Generate markdown report for events
+  // Generate markdown report for all extracted events
   const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   let markdown = `# Live Music Events in SF Bay Area for ${currentDate}\n\n`;
-  
-  // One more pass to strictly filter events based on date patterns
-  const strictlyFilteredEvents = todaysEvents.filter(event => {
-    // Skip events that explicitly mention a date that's not today
-    if (event.date) {
-      const lowerDate = event.date.toLowerCase();
-      
-      // Check for day names that don't match today's day
-      const dayOfWeek = today.getDay();
-      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-      const shortDayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-      
-      // If the date contains a day name that doesn't match today, filter it out
-      for (let i = 0; i < dayNames.length; i++) {
-        if (i !== dayOfWeek && 
-            (lowerDate.includes(dayNames[i]) || lowerDate.includes(shortDayNames[i]))) {
-          return false;
-        }
-      }
-      
-      // Filter out dates that explicitly mention a different day
-      const otherDates = Array.from({length: 31}, (_, i) => i + 1)
-                             .filter(d => d !== todayDate);
-      
-      for (const otherDate of otherDates) {
-        // Look for patterns like "May 12" or "5/12" or "5.12"
-        if (lowerDate.includes(` ${otherDate}`) || 
-            lowerDate.includes(`${otherDate},`) ||
-            lowerDate.match(new RegExp(`\\b${todayMonth}\\/${otherDate}\\b`)) ||
-            lowerDate.match(new RegExp(`\\b${todayMonth}\\.${otherDate}\\b`))) {
-          return false;
-        }
-      }
-    }
-    
-    return true;
-  });
   
   // Group events by region first, then by venue
   const eventsByRegion = {};
   
-  strictlyFilteredEvents.forEach(event => {
+  extractedEvents.forEach(event => {
     const region = event.region || 'Other Areas';
     const venue = event.venue || 'Unknown Venue';
     
@@ -361,11 +230,11 @@ function processHtmlFiles(fetches, sources) {
   );
   
   console.log(`\nProcessing complete!`);
-  console.log(`- Found ${allEvents.length} total events`);
-  console.log(`- Filtered ${todaysEvents.length} events for today (${todayString})`);
+  console.log(`- Extracted ${allEvents.length} total events`);
   console.log(`- Saved results to ${outputDir}`);
-  console.log(`- Saved tonight's events to tonights_events.md`);
-  console.log(`\nTip: Run 'npm run cleanup' to use Claude to clean up and normalize the event data`);
+  console.log(`- Saved extracted events to events_${todayString}.json`);
+  console.log(`- Generated events listing in tonights_events.md`);
+  console.log(`\nTip: Run 'npm run cleanup' to use Claude to clean up, filter and normalize the event data`);
 }
 
 // Function to extract events from HTML using source-specific selectors
